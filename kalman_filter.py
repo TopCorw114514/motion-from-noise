@@ -156,12 +156,16 @@ class ConstantAccelerationKalman:
         #    K 决定把其中多少信息吸收进状态。
         self.state = self.state + gain * innovation
 
-        # 5) 更新协方差：
-        #    P_new = (I - K·H)·P
-        #    融合测量后不确定性应当下降；这个公式是数学推导的结果。
+        # 5) 更新协方差：采用数值更稳定的 Joseph 形式。
+        #    A = I - K·H
+        #    P_new = A·P·Aᵀ + K·R·Kᵀ
+        # 它和常见的简化式 (I-K·H)·P 在数学上等价，
+        # 但长期迭代时能更好地保持协方差矩阵的对称正定性。
+        update_matrix = np.eye(3) - np.outer(gain, self.H[0])
         self.covariance = (
-            np.eye(3) - np.outer(gain, self.H[0])
-        ) @ self.covariance
+            update_matrix @ self.covariance @ update_matrix.T
+            + np.outer(gain, gain) * self.R[0, 0]
+        )
 
         # 返回副本而不是内部数组，防止调用方意外修改内部状态。
         return self.state.copy()
