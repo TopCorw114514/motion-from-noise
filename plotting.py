@@ -116,12 +116,12 @@ def save_comparison_figure(
     ax.legend(loc="best", fontsize=9)
     ax.grid(alpha=0.3)
 
-    # ===== 右上：2 秒后的放大细节 =====
+    # ===== 右上：放大细节 =====
     # 左边整图数据点太多，看不出滤波是否“跟手”，
-    # 所以只截取 2 秒之后的区间放大，看绿线是否贴住黑线、
-    # 蓝线是否明显滞后。
+    # 所以只截取 warmup_time（默认 2 秒）之后的区间放大，
+    # 看绿线是否贴住黑线、蓝线是否明显滞后。
     ax = axes[0, 1]
-    slice_ = t >= 2.0
+    slice_ = t >= warmup_time
     ax.plot(
         t[slice_],
         result.measured_position[slice_],
