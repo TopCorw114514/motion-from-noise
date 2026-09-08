@@ -11,6 +11,8 @@
 
 from pathlib import Path
 
+from baseline_filters import causal_moving_average
+
 # 先把 matplotlib 切换成 Agg 后端再导入 pyplot。
 # Agg 是“只负责把图画成文件”的后端，不依赖桌面窗口，
 # 因此在任何环境（包括没有图形界面的服务器）都能保存 PNG。
@@ -266,10 +268,13 @@ def save_measurement_figure(
     # 如果不知道真值，就用一段滑动平均当近似基准。
     # 画直方图能直观看到“误差是否集中在 0 附近”。
     ax = axes[0, 1]
+    # 若没有真值，用“因果滑动平均”当近似基准：
+    # 它和项目其他地方一样只使用当前及过去的数据，
+    # 不会因为偷看未来数据而显得过于平滑。
     residual_raw = measured - (
-        truth_position if truth_position is not None else np.convolve(
-            measured, np.ones(21) / 21, mode="same"
-        )
+        truth_position
+        if truth_position is not None
+        else causal_moving_average(measured, window_size=21)
     )
     ax.hist(
         residual_raw, bins=30, alpha=0.5,
